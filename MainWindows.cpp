@@ -26,7 +26,7 @@ void MainWindows::start()
 			}
 			getchar();
 			getchar();
-			system("cls");
+			system("clean");
 			continue;
 		}
 		if (input == "next") {
@@ -69,7 +69,7 @@ void MainWindows::start()
 			}
 			getchar();
 			getchar();
-			system("cls");
+			system("clean");
 		}
 	}
 }

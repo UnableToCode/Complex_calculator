@@ -56,6 +56,7 @@ void Expression::get_expression(string org)
 bool Expression::check_mistake()
 {
 	bool flag = true;
+	bool flag_paren = true;
 	string pattern;
 	string help{};
 	string help_replace{};
@@ -77,7 +78,7 @@ bool Expression::check_mistake()
 		cout << "erro: The num of '(' is more than the num of ')'" << endl;
 		flag = false;
 	}
-	if (expression.front() != 'a' && expression.front() != 'c' && !(expression.front() >= '0'&&expression.front() <= '9') && expression.front() != '-'&& expression.front() != 'i'&&expression.front() != '(') {
+	if (expression.front() != 'a' && expression.front() != 'd' && expression.front() != 'c' && !(expression.front() >= '0'&&expression.front() <= '9') && expression.front() != '-'&& expression.front() != 'i'&&expression.front() != '(') {
 		cout << "erro: Expression begin with: " << expression.front() << endl;
 		flag = false;
 	}
@@ -121,13 +122,42 @@ bool Expression::check_mistake()
 	reg1 = pattern;
 	help = expression;
 	while (regex_search(help, result, reg1)) {
-		cout << "erro: Unvalidated input: " << result.str(0) << ", its place is: "<< expression.find(result.str(0)) << endl;
+		cout << "erro: Unvalidated input: " << result.str(0) << ", its place is: " << expression.find(result.str(0)) << endl;
 		flag = false;
 		help = result.suffix().str();
 	}
 	int pos = 0;
+	while (expression.find("dst", pos) != string::npos) {
+		int index = expression.find("dst", pos);
+		int num = 1;
+		int j = index + 3;
+		while (num != 0) {
+			j++;
+			if (j == expression.size()) {
+				flag_paren = false;
+				break;
+			}
+			if (expression[j] == '(')
+				num++;
+			if (expression[j] == ')')
+				num--;
+
+		}
+		if (flag_paren) {
+			string help(expression.begin() + index, expression.begin() + j + 1);
+			if (help.find(',') == string::npos) {
+				flag = false;
+				cout << "erro: Unvalidated input for no ',': " << help << ", its place is: " << expression.find(help) << endl;
+			}
+		}
+		else {
+			cout << "erro: Unvalidated input for \"dst(\" without ')', its place is: " << index << endl;
+		}
+		pos = expression.find("dst", pos) + 1;
+	}
+	pos = 0;
 	while (expression.find(")i",pos) != string::npos) {
-		int index = expression.find(")i");
+		int index = expression.find(")i",pos);
 		int num = 1;
 		int j = index;
 		while (num != 0) {
@@ -538,6 +568,54 @@ void Expression::my_as()
 	}
 }
 
+void Expression::my_dis()
+{
+	while (expression.find("dst") != string::npos) {
+		int index = expression.find("dst");
+		regex reg_complex(complex_number_no_paren);
+		string replace_help{};
+		complex<double> complex1, complex2;
+		int num = 1;
+		int j = index + 3;
+		int k{};
+		while (num != 0) {
+			j++;
+			if (expression[j] == '(')
+				num++;
+			if (expression[j] == ')')
+				num--;
+			if (expression[j] == ',') {
+				k = j;
+			}
+		}
+		string help1(expression.begin() + index + 4, expression.begin() + k);
+		string help2(expression.begin() + k + 1, expression.begin() + j);
+		string help = "dst(" + help1 + "," + help2 + ")";
+		if (regex_match(help1, reg_complex)) {
+			complex1 = get_complex(help1);
+		}
+		else {
+			Expression exp_help(help1);
+			exp_help.calculation();
+			help1 = exp_help.push_expression();
+			complex1 = get_complex(help1);
+		}
+		if (regex_match(help2, reg_complex)) {
+			complex2 = get_complex(help2);
+		}
+		else {
+			Expression exp_help(help2);
+			exp_help.calculation();
+			help2 = exp_help.push_expression();
+			complex2 = get_complex(help2);
+		}
+		complex<double> result_complex = abs(complex1 - complex2);
+		replace_help = complex_to_str(result_complex);
+		index = expression.find(help);
+		expression.replace(expression.begin() + index, expression.begin() + index + help.length(), replace_help);
+	}
+}
+
 void Expression::preproccess()
 {
 	regex reg1(complex_number);
@@ -596,6 +674,7 @@ void Expression::calculation()
 		expression.erase(expression.end() - 1);
 		return;
 	}
+	my_dis();
 	smatch result;
 	string help{};
 	for (int i = 0; i < expression.length(); i++) {

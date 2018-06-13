@@ -31,6 +31,7 @@ public:
 	void my_pow();
 	void my_md();
 	void my_as();
+	void my_dis();
 	void preproccess();
 	void calculation();
 	void print_exp(string & rlt);
